@@ -1,6 +1,7 @@
 """Sentinel AI — Community ActionGrid Backend"""
 import logging
 import sys
+import traceback
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -48,10 +49,28 @@ async def lifespan(app: FastAPI):
 
     _INSECURE_KEY = "dev-secret-key-change-in-production"
     if settings.SECRET_KEY == _INSECURE_KEY:
-        logger.warning(
-            "WARNING: SECRET_KEY is set to the default development value. "
-            "Set a strong SECRET_KEY in your .env file before deploying to production."
-        )
+        if settings.APP_ENV == "production":
+            logger.critical(
+                "FATAL: SECRET_KEY is set to the insecure default in production. "
+                "Generate a secure key:  python -c \"import secrets; print(secrets.token_hex(32))\" "
+                "then set SECRET_KEY in your Render environment variables."
+            )
+            sys.exit(1)
+        else:
+            logger.warning(
+                "SECRET_KEY is using the insecure development default. "
+                "This is only acceptable in local development."
+            )
+
+    # Verify auth subsystem works before accepting traffic
+    try:
+        from app.core.security import hash_password, create_access_token
+        _h = hash_password("startup-test-probe")
+        _t = create_access_token({"sub": "probe", "email": "probe@sentinel.ai", "role": "USER"})
+        logger.info("Auth self-test passed")
+    except Exception:
+        logger.critical("Auth self-test FAILED — cannot start:\n%s", traceback.format_exc())
+        sys.exit(1)
 
     await manager.startup()
 
@@ -95,10 +114,22 @@ app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def _global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(
+        "Unhandled exception on %s %s\n%s",
+        request.method,
+        request.url.path,
+        traceback.format_exc(),
+    )
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 app.include_router(incidents.router)
 app.include_router(ai.router)

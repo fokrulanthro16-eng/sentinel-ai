@@ -4,8 +4,8 @@ Users are stored in `sentinel_api_users` when DATABASE_URL is set,
 falling back to the in-memory dict for zero-config local development.
 Login and register endpoints are rate-limited to resist brute-force.
 """
+import logging
 import uuid
-from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request, status, Depends
@@ -17,6 +17,8 @@ from app.core.security import hash_password, verify_password, create_access_toke
 from app.core.limiter import limiter
 from app.api.dependencies import require_auth
 from app.db.database import get_optional_session
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -88,28 +90,36 @@ async def register(
     body: RegisterRequest,
     session: Optional[AsyncSession] = Depends(get_optional_session),
 ):
-    if len(body.password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    try:
+        if len(body.password) < 8:
+            raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
 
-    email = body.email.lower().strip()
-    if await _find_user(email, session):
-        raise HTTPException(status_code=409, detail="Email already registered")
+        email = body.email.lower().strip()
+        if await _find_user(email, session):
+            raise HTTPException(status_code=409, detail="Email already registered")
 
-    user_id = str(uuid.uuid4())
-    user = {
-        "id": user_id,
-        "name": body.name,
-        "email": email,
-        "password": hash_password(body.password),
-        "role": "USER",
-    }
-    await _save_user(user, session)
+        user_id = str(uuid.uuid4())
+        hashed = hash_password(body.password)
+        user = {
+            "id": user_id,
+            "name": body.name,
+            "email": email,
+            "password": hashed,
+            "role": "USER",
+        }
+        await _save_user(user, session)
 
-    token = create_access_token({"sub": user_id, "email": email, "role": "USER"})
-    return AuthResponse(
-        access_token=token,
-        user={"id": user_id, "email": email, "name": body.name, "role": "USER"},
-    )
+        token = create_access_token({"sub": user_id, "email": email, "role": "USER"})
+        logger.info("User registered: %s", email)
+        return AuthResponse(
+            access_token=token,
+            user={"id": user_id, "email": email, "name": body.name, "role": "USER"},
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Registration failed for %s", body.email)
+        raise HTTPException(status_code=500, detail="Registration failed. Check server logs.")
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -119,18 +129,25 @@ async def login(
     body: LoginRequest,
     session: Optional[AsyncSession] = Depends(get_optional_session),
 ):
-    email = body.email.lower().strip()
-    user = await _find_user(email, session)
-    if not user or not verify_password(body.password, user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    try:
+        email = body.email.lower().strip()
+        user = await _find_user(email, session)
+        if not user or not verify_password(body.password, user["password"]):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    token = create_access_token(
-        {"sub": user["id"], "email": email, "role": user["role"]}
-    )
-    return AuthResponse(
-        access_token=token,
-        user={"id": user["id"], "email": email, "name": user.get("name"), "role": user["role"]},
-    )
+        token = create_access_token(
+            {"sub": user["id"], "email": email, "role": user["role"]}
+        )
+        logger.info("User logged in: %s", email)
+        return AuthResponse(
+            access_token=token,
+            user={"id": user["id"], "email": email, "name": user.get("name"), "role": user["role"]},
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Login failed for %s", body.email)
+        raise HTTPException(status_code=500, detail="Login failed. Check server logs.")
 
 
 @router.get("/me")

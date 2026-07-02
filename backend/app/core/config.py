@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "Sentinel AI: Community ActionGrid"
     APP_VERSION: str = "1.0.0"
+    APP_ENV: str = "development"   # Set to "production" on Render / any live host
     DEBUG: bool = False
 
     # AI
