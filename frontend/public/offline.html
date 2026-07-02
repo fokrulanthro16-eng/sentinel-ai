@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Offline — Sentinel AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0a0e1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      text-align: center;
+      padding: 1.5rem;
+    }
+    .icon { font-size: 4rem; }
+    h1 { font-size: 1.5rem; font-weight: 700; }
+    p { color: #94a3b8; max-width: 24rem; line-height: 1.6; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3);
+      color: #f87171; border-radius: 9999px; padding: 0.5rem 1rem;
+      font-size: 0.875rem; font-weight: 600;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #f87171; animation: pulse 1.5s ease-in-out infinite;
+    }
+    button {
+      background: #ef4444; color: white; border: none;
+      border-radius: 0.5rem; padding: 0.75rem 1.5rem;
+      font-size: 0.875rem; font-weight: 600; cursor: pointer;
+    }
+    button:hover { background: #dc2626; }
+    @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
+  </style>
+</head>
+<body>
+  <span class="icon">📡</span>
+  <div class="badge"><span class="dot"></span> No Connection</div>
+  <h1>You're offline</h1>
+  <p>
+    Sentinel AI requires an internet connection. Any incidents you've saved in this session
+    will sync automatically when you reconnect.
+  </p>
+  <button onclick="window.location.reload()">Try again</button>
+  <p style="font-size:0.75rem; color:#475569;">Sentinel AI — Community ActionGrid</p>
+</body>
+</html>

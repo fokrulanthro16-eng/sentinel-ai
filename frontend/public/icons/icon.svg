@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#0a0e1a"/>
+  <path d="M256 60 L420 130 L420 270 C420 370 340 440 256 470 C172 440 92 370 92 270 L92 130 Z" fill="#ef4444" opacity="0.15"/>
+  <path d="M256 80 L400 145 L400 270 C400 360 328 425 256 452 C184 425 112 360 112 270 L112 145 Z" fill="#ef4444" opacity="0.85"/>
+  <text x="256" y="320" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="900" font-size="200" fill="white">S</text>
+</svg>

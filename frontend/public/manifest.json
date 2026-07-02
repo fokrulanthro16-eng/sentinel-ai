@@ -1,0 +1,49 @@
+{
+  "name": "Sentinel AI — Community ActionGrid",
+  "short_name": "Sentinel AI",
+  "description": "Real-time community disaster response powered by AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#ef4444",
+  "orientation": "any",
+  "lang": "en",
+  "categories": ["utilities", "emergency"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Report Incident",
+      "short_name": "Report",
+      "url": "/report",
+      "description": "Submit a new emergency report",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Live Dashboard",
+      "short_name": "Dashboard",
+      "url": "/dashboard",
+      "description": "View active incidents in real time",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Risk Map",
+      "short_name": "Map",
+      "url": "/map",
+      "description": "Interactive incident map",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }]
+    }
+  ]
+}
