@@ -1,53 +1,20 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-import { createHmac } from "crypto";
-import { prisma } from "@/lib/prisma";
 
-/**
- * Creates an HS256 JWT compatible with the FastAPI backend's python-jose decoder.
- * Uses Node.js built-in crypto — no additional dependencies.
- * NEXTAUTH_SECRET **must** equal the backend SECRET_KEY env var or FastAPI will
- * reject every request with 401.
- */
-function createBackendJWT(
-  payload: Record<string, unknown>,
-  secret: string
-): string {
-  const b64url = (str: string) =>
-    Buffer.from(str)
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
-
-  const now = Math.floor(Date.now() / 1000);
-  const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const body = b64url(
-    JSON.stringify({ ...payload, iat: now, exp: now + 7 * 24 * 3600 })
-  );
-  const data = `${header}.${body}`;
-  const sig = createHmac("sha256", secret)
-    .update(data)
-    .digest("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-  return `${data}.${sig}`;
-}
-
-// Fail loudly at module load time so the Vercel function log shows the problem
-// rather than surfacing as a silent "Invalid email or password".
+// Fail loudly at module load so the Vercel function log surfaces the problem
+// rather than a silent "Invalid email or password" on every login attempt.
 const _NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
 if (!_NEXTAUTH_SECRET) {
   console.error(
     "[auth] FATAL: NEXTAUTH_SECRET is not set. " +
-    "NextAuth cannot sign or verify JWTs. " +
-    "Set NEXTAUTH_SECRET in Vercel Environment Variables " +
-    "to the same value as SECRET_KEY on Render. " +
+    "NextAuth cannot sign or verify session JWTs. " +
+    "Set NEXTAUTH_SECRET in Vercel Environment Variables. " +
     "Generate one with: openssl rand -base64 32"
   );
 }
+
+// Read once at module load so the value is visible in cold-start logs.
+const _API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt", maxAge: 7 * 24 * 60 * 60 },
@@ -66,7 +33,7 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // Development-only mock admin — never entered in production (NODE_ENV=production).
+        // Development-only mock admin — never active in production (NODE_ENV=production).
         if (process.env.NODE_ENV === "development") {
           const email = credentials.email.toLowerCase().trim();
           if (email === "admin@sentinel.local" && credentials.password === "Admin@123") {
@@ -75,27 +42,42 @@ export const authOptions: NextAuthOptions = {
               email: "admin@sentinel.local",
               name: "System Administrator",
               role: "ADMIN",
+              _backendToken: "",
             };
           }
         }
 
         try {
-          const email = credentials.email.toLowerCase().trim();
-          const user = await prisma.user.findUnique({ where: { email } });
-          if (!user) {
-            console.log("[auth] authorize: no user found for", email);
+          const res = await fetch(`${_API_URL}/api/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials.email.toLowerCase().trim(),
+              password: credentials.password,
+            }),
+          });
+
+          if (!res.ok) {
+            console.log("[auth] authorize: backend returned", res.status, "for", credentials.email);
             return null;
           }
-          const valid = await bcrypt.compare(credentials.password, user.password);
-          if (!valid) {
-            console.log("[auth] authorize: wrong password for", email);
-            return null;
-          }
-          console.log("[auth] authorize: OK for", email, "role:", user.role);
-          return { id: user.id, email: user.email, name: user.name ?? "", role: user.role };
+
+          const data = await res.json() as {
+            access_token: string;
+            user: { id: string; email: string; name: string; role: string };
+          };
+          console.log("[auth] authorize: OK for", data.user.email, "role:", data.user.role);
+
+          // Carry the FastAPI-signed token so the JWT callback can store it directly.
+          // FastAPI verifies it with its own SECRET_KEY — no re-signing needed here.
+          return {
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.name ?? "",
+            role: data.user.role,
+            _backendToken: data.access_token,
+          };
         } catch (err) {
-          // Log the real error — this appears in Vercel's function logs and makes
-          // "Invalid email or password" diagnosable instead of mysterious.
           console.error("[auth] authorize: unexpected error:", err);
           return null;
         }
@@ -107,19 +89,8 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = (user as { role: string }).role;
-        // Sign a FastAPI-compatible HS256 token.
-        // NEXTAUTH_SECRET must equal the backend SECRET_KEY or FastAPI will 401.
-        if (!_NEXTAUTH_SECRET) {
-          console.error("[auth] jwt: NEXTAUTH_SECRET missing — backendToken will be invalid");
-        }
-        token.backendToken = createBackendJWT(
-          {
-            sub: user.id,
-            email: token.email ?? "",
-            role: (user as { role: string }).role,
-          },
-          _NEXTAUTH_SECRET ?? ""
-        );
+        // Store the token FastAPI already signed — it's ready for use as Bearer.
+        token.backendToken = (user as { _backendToken?: string })._backendToken ?? "";
       }
       return token;
     },
