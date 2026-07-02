@@ -2,7 +2,7 @@
    Handles: static asset caching, offline fallback, background sync, push notifications
 */
 
-const CACHE_VERSION = 'zJatYXgHPmhG8Qf_QeeCl';
+const CACHE_VERSION = 'RIsiRXQmmXPmlP7a0aawc';
 const STATIC_CACHE  = `sentinel-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `sentinel-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL   = '/offline.html';
