@@ -1,4 +1,19 @@
 /** @type {import('next').NextConfig} */
+
+// Fail the build when required server-side env vars are absent in production.
+// This makes the "missing NEXTAUTH_SECRET → silent login failure" class of bugs
+// structurally impossible: Vercel refuses to deploy if the var is not set.
+if (process.env.NODE_ENV === "production") {
+  const REQUIRED = ["NEXTAUTH_SECRET", "DATABASE_URL"];
+  const missing = REQUIRED.filter((k) => !process.env[k]);
+  if (missing.length > 0) {
+    throw new Error(
+      `[sentinel-ai] Missing required environment variables: ${missing.join(", ")}. ` +
+      `Set them in Vercel Dashboard → Settings → Environment Variables.`
+    );
+  }
+}
+
 const nextConfig = {
   reactStrictMode: true,
   output: "standalone",
