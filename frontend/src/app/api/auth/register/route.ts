@@ -3,7 +3,11 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 
-const _API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const _API_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "production"
+    ? "https://sentinel-ai-2uo3.onrender.com"
+    : "http://localhost:8000");
 
 export async function POST(req: Request) {
   try {

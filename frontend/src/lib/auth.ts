@@ -1,8 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-// Fail loudly at module load so the Vercel function log surfaces the problem
-// rather than a silent "Invalid email or password" on every login attempt.
 const _NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
 if (!_NEXTAUTH_SECRET) {
   console.error(
@@ -13,8 +11,14 @@ if (!_NEXTAUTH_SECRET) {
   );
 }
 
-// Read once at module load so the value is visible in cold-start logs.
-const _API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// In production, fall back to the known Render deployment when NEXT_PUBLIC_API_URL
+// is not configured — so the app works on Vercel without any env var changes.
+// Set NEXT_PUBLIC_API_URL to override (e.g. a different Render service or local dev).
+const _API_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "production"
+    ? "https://sentinel-ai-2uo3.onrender.com"
+    : "http://localhost:8000");
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt", maxAge: 7 * 24 * 60 * 60 },
@@ -33,14 +37,15 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // Development-only mock admin — never active in production (NODE_ENV=production).
+        // Development-only mock admin so the app is usable without a running backend.
+        // Never active in production (NODE_ENV=production on Vercel).
         if (process.env.NODE_ENV === "development") {
           const email = credentials.email.toLowerCase().trim();
-          if (email === "admin@sentinel.local" && credentials.password === "Admin@123") {
+          if (email === "admin@gmail.com" && credentials.password === "Admin@123") {
             return {
               id: "mock-admin-001",
-              email: "admin@sentinel.local",
-              name: "System Administrator",
+              email: "admin@gmail.com",
+              name: "Admin User",
               role: "ADMIN",
               _backendToken: "",
             };
@@ -68,8 +73,6 @@ export const authOptions: NextAuthOptions = {
           };
           console.log("[auth] authorize: OK for", data.user.email, "role:", data.user.role);
 
-          // Carry the FastAPI-signed token so the JWT callback can store it directly.
-          // FastAPI verifies it with its own SECRET_KEY — no re-signing needed here.
           return {
             id: data.user.id,
             email: data.user.email,
@@ -78,7 +81,7 @@ export const authOptions: NextAuthOptions = {
             _backendToken: data.access_token,
           };
         } catch (err) {
-          console.error("[auth] authorize: unexpected error:", err);
+          console.error("[auth] authorize: unexpected error calling", _API_URL, "—", err);
           return null;
         }
       },
@@ -89,7 +92,6 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = (user as { role: string }).role;
-        // Store the token FastAPI already signed — it's ready for use as Bearer.
         token.backendToken = (user as { _backendToken?: string })._backendToken ?? "";
       }
       return token;
