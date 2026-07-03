@@ -96,28 +96,28 @@ The entire stack runs without a database for zero-config demos. Drop in a Postgr
 ## Screenshots
 
 ### Landing Dashboard
-![Landing](screenshots/01-landing-dashboard.png)
+![Landing](docs/screenshots/landing.png)
 
 ### Command Dashboard
-![Command Dashboard](screenshots/02-command-dashboard.png)
+![Command Dashboard](docs/screenshots/dashboard.png)
 
 ### Live Risk Map
-![Risk Map](screenshots/03-risk-map.png)
+![Risk Map](docs/screenshots/risk-map.png)
 
 ### Incident Submission Form
-![Report Form](screenshots/04-report-form.png)
+![Report Form](docs/screenshots/report-incident.png)
 
 ### AI Situation Report (SITREP)
-![AI Summary](screenshots/05-ai-sitrep.png)
+![AI Summary](docs/screenshots/ai-summary.png)
 
 ### Analytics Dashboard
-![Analytics](screenshots/06-analytics.png)
+![Analytics](docs/screenshots/analytics.png)
 
-### Admin Panel — Incident Management
-![Admin Panel](screenshots/07-admin-incidents.png)
+### Alerts Feed
+![Alerts](docs/screenshots/alerts.png)
 
 ### Resource Management
-![Resources](screenshots/08-resources.png)
+![Resources](docs/screenshots/resources.png)
 
 ---
 
