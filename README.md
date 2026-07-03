@@ -110,14 +110,14 @@ The entire stack runs without a database for zero-config demos. Drop in a Postgr
 ### AI Situation Report (SITREP)
 ![AI Summary](docs/screenshots/ai-summary.png)
 
-### Analytics Dashboard
-![Analytics](docs/screenshots/analytics.png)
-
-### Alerts Feed
+### Active Alerts
 ![Alerts](docs/screenshots/alerts.png)
 
-### Resource Management
+### Resources & Shelters
 ![Resources](docs/screenshots/resources.png)
+
+### Analytics Dashboard
+![Analytics](docs/screenshots/analytics.png)
 
 ---
 
