@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 <img src="https://img.shields.io/badge/Sentinel-AI-red?style=for-the-badge&logo=shield&logoColor=white" alt="Sentinel AI" height="60"/>
 
@@ -96,35 +96,27 @@ The entire stack runs without a database for zero-config demos. Drop in a Postgr
 ## Screenshots
 
 ### Landing Dashboard
-
 ![Landing](screenshots/01-landing-dashboard.png)
 
 ### Command Dashboard
-
 ![Command Dashboard](screenshots/02-command-dashboard.png)
 
 ### Live Risk Map
-
 ![Risk Map](screenshots/03-risk-map.png)
 
 ### Incident Submission Form
-
 ![Report Form](screenshots/04-report-form.png)
 
 ### AI Situation Report (SITREP)
-
 ![AI Summary](screenshots/05-ai-sitrep.png)
 
 ### Analytics Dashboard
-
 ![Analytics](screenshots/06-analytics.png)
 
 ### Admin Panel — Incident Management
-
 ![Admin Panel](screenshots/07-admin-incidents.png)
 
 ### Resource Management
-
 ![Resources](screenshots/08-resources.png)
 
 ---
@@ -211,7 +203,7 @@ sequenceDiagram
 | NASA FIRMS API | Satellite fire hotspot detection | Empty hotspot list |
 | NASA POWER | Solar / climate data (free, no key) | Built-in |
 
-### Deployment & DevOps
+### Deployment
 
 | Layer | Platform |
 |---|---|
@@ -220,7 +212,6 @@ sequenceDiagram
 | Database | PostgreSQL (Render / Neon / Supabase) or in-memory |
 | WebSocket relay | Redis (optional — falls back to in-memory) |
 | Container | Docker + docker-compose (local / self-hosted) |
-| CI/CD | GitHub → Vercel + Render auto-deploy |
 
 ---
 
@@ -239,8 +230,7 @@ sentinel-ai/
 │   │   │   │   │   ├── resources/   # Resource management
 │   │   │   │   │   └── ai-settings/ # AI model configuration
 │   │   │   │   └── user-dashboard/  # Authenticated user home
-│   │   │   ├── api/
-│   │   │   │   └── auth/            # NextAuth handler + register proxy
+│   │   │   ├── api/auth/            # NextAuth handler + register proxy
 │   │   │   ├── auth/                # Login + register pages
 │   │   │   ├── dashboard/           # Public command dashboard
 │   │   │   ├── map/                 # Full-screen risk map
@@ -248,12 +238,11 @@ sentinel-ai/
 │   │   │   ├── ai-summary/          # Gemini SITREP view
 │   │   │   ├── analytics/           # Analytics dashboard
 │   │   │   ├── alerts/              # Public alert feed
-│   │   │   ├── resources/           # Resource browser
-│   │   │   └── incidents/[id]/      # Incident detail + print view
+│   │   │   └── resources/           # Resource browser
 │   │   ├── components/
 │   │   │   ├── dashboard/           # StatsCard, IncidentTable, AlertsFeed, RiskSummary
 │   │   │   ├── map/                 # RiskMap (Leaflet — client-only)
-│   │   │   ├── shared/              # Navbar, ShelterPanel, Footer
+│   │   │   ├── shared/              # Navbar, ShelterPanel
 │   │   │   └── ui/                  # shadcn/ui primitives
 │   │   ├── lib/
 │   │   │   ├── auth.ts              # NextAuth config — delegates to FastAPI
@@ -284,7 +273,6 @@ sentinel-ai/
 │       │   ├── trust_engine.py      # Multi-signal trust scoring
 │       │   ├── analytics_service.py # Trend + forecast algorithms
 │       │   ├── alert_engine.py      # Auto-alert generation
-│       │   ├── intelligence_service.py # Weather + fire aggregation
 │       │   └── notification/        # SMS / Email / WhatsApp providers
 │       ├── core/
 │       │   ├── config.py            # Pydantic settings
@@ -294,18 +282,15 @@ sentinel-ai/
 │       ├── db/
 │       │   ├── database.py          # SQLAlchemy engine — dual-mode
 │       │   ├── mock_data.py         # In-memory store + seed data
-│       │   ├── incident_repo.py
-│       │   ├── alert_repo.py
-│       │   ├── resource_repo.py
-│       │   └── trust_audit_repo.py
+│       │   └── *_repo.py            # Repository layer per entity
 │       ├── models/                  # SQLAlchemy ORM models
 │       └── schemas/                 # Pydantic request/response schemas
 │
 ├── sample_data/                     # Seed JSON (incidents, alerts, resources, shelters)
 ├── docker/
-│   └── docker-compose.yml           # PostgreSQL + backend + frontend
+│   └── docker-compose.yml
 ├── render.yaml                      # Render deployment manifest
-└── .env.example                     # Environment variable template
+└── .env.example
 ```
 
 ---
@@ -319,9 +304,8 @@ sentinel-ai/
 | Node.js | 18+ |
 | Python | 3.11+ |
 | npm | latest |
-| Git | any |
 
-A Gemini API key is **optional** — the platform runs in full demo mode with rich mock data when no key is provided.
+A Gemini API key is optional — the platform runs in full demo mode without one.
 
 ### 1. Clone
 
@@ -335,40 +319,30 @@ cd sentinel-ai
 ```bash
 cd backend
 
-# Create virtual environment
 python -m venv .venv
 
-# Activate
-# Windows PowerShell:
+# Windows
 .venv\Scripts\Activate.ps1
-# macOS / Linux:
+# macOS / Linux
 source .venv/bin/activate
 
-# Install dependencies
 pip install -r requirements.txt
 
-# Configure
 cp .env.example .env
-# Edit .env — minimum required: SECRET_KEY
+# Set SECRET_KEY in .env
 
-# Start
 uvicorn app.main:app --reload --port 8000
 ```
 
-Backend: http://localhost:8000  
-API docs: http://localhost:8000/docs
+Backend: http://localhost:8000 · Docs: http://localhost:8000/docs
 
 ### 3. Frontend
 
 ```bash
-# New terminal
 cd frontend
-
 npm install
-
 cp .env.local.example .env.local
-# Edit .env.local — minimum required: NEXTAUTH_SECRET
-
+# Set NEXTAUTH_SECRET in .env.local
 npm run dev
 ```
 
@@ -382,34 +356,30 @@ App: http://localhost:3000
 
 | Variable | Required | Description |
 |---|---|---|
-| `NEXTAUTH_SECRET` | **Yes** | Random string (≥32 chars) used to sign NextAuth JWTs. Generate: `openssl rand -base64 32` |
-| `NEXTAUTH_URL` | **Yes** | Canonical URL of this deployment. Local: `http://localhost:3000` |
-| `NEXT_PUBLIC_API_URL` | No | FastAPI base URL. Defaults to `https://sentinel-ai-2uo3.onrender.com` in production, `http://localhost:8000` in dev |
-| `NEXT_PUBLIC_MAP_CENTER_LAT` | No | Map default latitude (default: `-1.2921` — Nairobi) |
-| `NEXT_PUBLIC_MAP_CENTER_LNG` | No | Map default longitude (default: `36.8219`) |
-| `NEXT_PUBLIC_MAP_ZOOM` | No | Map default zoom level (default: `12`) |
-| `DATABASE_URL` | No | PostgreSQL URL for Prisma user table. Leave empty — auth is handled by FastAPI |
+| `NEXTAUTH_SECRET` | **Yes** | Signs NextAuth JWTs. Generate: `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | **Yes** | Canonical URL. Local: `http://localhost:3000` · Prod: your Vercel URL |
+| `NEXT_PUBLIC_API_URL` | No | FastAPI base URL. Defaults to Render URL in production |
+| `NEXT_PUBLIC_MAP_CENTER_LAT` | No | Map latitude (default: `-1.2921` — Nairobi) |
+| `NEXT_PUBLIC_MAP_CENTER_LNG` | No | Map longitude (default: `36.8219`) |
+| `NEXT_PUBLIC_MAP_ZOOM` | No | Map zoom (default: `12`) |
+| `DATABASE_URL` | No | PostgreSQL for Prisma user table — not required for auth |
 
 ### Backend (`backend/.env`)
 
 | Variable | Required | Description |
 |---|---|---|
-| `SECRET_KEY` | **Yes** | Secret for signing FastAPI JWTs. Generate: `openssl rand -hex 32` |
-| `APP_ENV` | **Yes (prod)** | Set to `production` on Render. Prevents insecure defaults from starting |
-| `DATABASE_URL` | No | PostgreSQL connection string. Omit to run in-memory mock store |
-| `GEMINI_API_KEY` | No | Google Gemini API key. Get free key at [aistudio.google.com](https://aistudio.google.com). App runs in mock mode without it |
-| `REDIS_URL` | No | Redis connection URL. Omit for single-instance in-memory WebSocket |
-| `CORS_ORIGINS` | No | Comma-separated allowed origins. Default: `http://localhost:3000` |
-| `OPENWEATHER_API_KEY` | No | OpenWeatherMap key for real weather in trust scoring |
-| `NASA_FIRMS_API_KEY` | No | NASA FIRMS key for satellite fire hotspot data |
-| `SMS_GATEWAY_URL` | No | SMS provider base URL. Omit for mock mode |
-| `SMS_API_KEY` | No | SMS provider API key |
-| `EMAIL_SMTP_HOST` | No | SMTP hostname for email alerts |
-| `EMAIL_SMTP_PORT` | No | SMTP port (default: `587`) |
-| `EMAIL_SMTP_USER` | No | SMTP username |
-| `EMAIL_SMTP_PASS` | No | SMTP password |
-| `WHATSAPP_TOKEN` | No | WhatsApp Cloud API bearer token |
-| `WHATSAPP_PHONE_ID` | No | WhatsApp Cloud API phone number ID |
+| `SECRET_KEY` | **Yes** | Signs FastAPI JWTs. Generate: `openssl rand -hex 32` |
+| `APP_ENV` | **Yes (prod)** | Set to `production` on Render |
+| `DATABASE_URL` | No | PostgreSQL URL — omit for in-memory mock store |
+| `GEMINI_API_KEY` | No | Google Gemini key — get free at [aistudio.google.com](https://aistudio.google.com) |
+| `REDIS_URL` | No | Redis URL — omit for single-instance WebSocket |
+| `CORS_ORIGINS` | No | Comma-separated allowed origins |
+| `OPENWEATHER_API_KEY` | No | Weather data for trust scoring |
+| `NASA_FIRMS_API_KEY` | No | Satellite fire hotspot data |
+| `SMS_GATEWAY_URL` | No | SMS provider — omit for mock mode |
+| `EMAIL_SMTP_HOST` | No | SMTP host for email alerts |
+| `WHATSAPP_TOKEN` | No | WhatsApp Cloud API token |
+| `WHATSAPP_PHONE_ID` | No | WhatsApp phone number ID |
 
 ---
 
@@ -429,36 +399,30 @@ sequenceDiagram
     FastAPI->>JWT: create_access_token({sub, email, role})
     JWT-->>FastAPI: signed HS256 token
     FastAPI-->>NextAuth: {access_token, user: {id, email, role}}
-    NextAuth->>NextAuth: jwt() callback — stores token + role in cookie
+    NextAuth->>NextAuth: jwt() callback — stores token + role
     NextAuth-->>Browser: Set-Cookie: next-auth.session-token
-    Browser->>NextAuth: GET /api/auth/session
-    NextAuth-->>Browser: {user: {id, email, role}, accessToken}
     Browser->>FastAPI: Authorization: Bearer <access_token>
-    FastAPI->>JWT: decode_token() → payload
     FastAPI-->>Browser: Protected resource
 ```
 
-**Role enforcement:**
-- `USER` — access to `/user-dashboard`, incident submission, resource browser
-- `ADMIN` — access to `/admin/*`, incident management, trust overrides, AI settings
-
-Middleware in `src/middleware.ts` intercepts all `/admin/*` and `/user-dashboard/*` routes. Unauthenticated requests redirect to `/auth/login`. Authenticated non-admin requests to `/admin/*` redirect to `/user-dashboard`.
+**Roles:**
+- `USER` — `/user-dashboard`, incident submission, resource browser
+- `ADMIN` — `/admin/*`, incident management, trust overrides, AI settings
 
 ---
 
 ## API Overview
 
-Base URL (production): `https://sentinel-ai-2uo3.onrender.com`  
-Interactive docs: `/docs` (Swagger UI) · `/redoc` (ReDoc)
+Base URL: `https://sentinel-ai-2uo3.onrender.com` · Docs: `/docs`
 
 <details>
 <summary><strong>Auth</strong></summary>
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/auth/register` | Create account → returns JWT |
-| `POST` | `/api/auth/login` | Authenticate → returns JWT |
-| `GET` | `/api/auth/me` | Current user (requires Bearer token) |
+| `POST` | `/api/auth/register` | Create account → JWT |
+| `POST` | `/api/auth/login` | Authenticate → JWT |
+| `GET` | `/api/auth/me` | Current user (Bearer token required) |
 
 </details>
 
@@ -467,16 +431,15 @@ Interactive docs: `/docs` (Swagger UI) · `/redoc` (ReDoc)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/incidents` | List incidents — filter: `?severity=critical&status=active` |
-| `POST` | `/api/incidents` | Submit incident → triggers AI classification + trust score |
-| `GET` | `/api/incidents/{id}` | Get single incident |
-| `PATCH` | `/api/incidents/{id}/status` | Update status → audit logged |
-| `GET` | `/api/incidents/{id}/trust` | Get trust score + validation reasons |
-| `POST` | `/api/incidents/{id}/trust/recalculate` | Re-run trust with live intelligence data |
-| `PATCH` | `/api/incidents/{id}/trust/override` | Admin manual trust override |
+| `GET` | `/api/incidents` | List — filter: `?severity=critical&status=active` |
+| `POST` | `/api/incidents` | Submit → AI classification + trust score |
+| `GET` | `/api/incidents/{id}` | Single incident |
+| `PATCH` | `/api/incidents/{id}/status` | Update status |
+| `GET` | `/api/incidents/{id}/trust` | Trust score + validation reasons |
+| `POST` | `/api/incidents/{id}/trust/recalculate` | Re-run with live intelligence data |
+| `PATCH` | `/api/incidents/{id}/trust/override` | Admin trust override |
 | `GET` | `/api/incidents/{id}/audit` | Full audit trail |
-| `GET` | `/api/incidents/analytics` | Aggregate stats — total, by severity, by status |
-| `GET` | `/api/incidents/admin` | Paginated admin view with sort + search |
+| `GET` | `/api/incidents/analytics` | Aggregate stats |
 
 </details>
 
@@ -485,9 +448,8 @@ Interactive docs: `/docs` (Swagger UI) · `/redoc` (ReDoc)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/alerts` | List active public alerts |
-| `POST` | `/api/alerts` | Create alert (auto-translates to SW/FR/AR via Gemini) |
-| `GET` | `/api/alerts/{id}` | Get single alert |
+| `GET` | `/api/alerts` | Active public alerts |
+| `POST` | `/api/alerts` | Create alert — auto-translates to SW/FR/AR |
 | `PATCH` | `/api/alerts/{id}` | Update alert |
 
 </details>
@@ -497,8 +459,8 @@ Interactive docs: `/docs` (Swagger UI) · `/redoc` (ReDoc)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/resources` | List all shelters and resources |
-| `GET` | `/api/resources/nearest` | Nearest resources `?lat=-1.29&lng=36.82&limit=3` |
+| `GET` | `/api/resources` | All shelters and resources |
+| `GET` | `/api/resources/nearest` | Nearest `?lat=-1.29&lng=36.82&limit=3` |
 | `POST` | `/api/resources` | Add resource |
 | `PATCH` | `/api/resources/{id}` | Update capacity / status |
 
@@ -509,10 +471,10 @@ Interactive docs: `/docs` (Swagger UI) · `/redoc` (ReDoc)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/ai/classify` | Classify free-text → category + severity + confidence |
-| `GET` | `/api/ai/risk-summary` | Full SITREP with risk level + multilingual alerts + actions |
-| `POST` | `/api/ai/multilingual-alert` | Translate alert to SW / FR / AR |
-| `POST` | `/api/ai/recommend` | Generate prioritised action list for an incident |
+| `POST` | `/api/ai/classify` | Free-text → category + severity + confidence |
+| `GET` | `/api/ai/risk-summary` | Full SITREP |
+| `POST` | `/api/ai/multilingual-alert` | Translate to SW / FR / AR |
+| `POST` | `/api/ai/recommend` | Prioritised action list |
 
 </details>
 
@@ -521,23 +483,13 @@ Interactive docs: `/docs` (Swagger UI) · `/redoc` (ReDoc)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/analytics/trends` | Incident counts by period (`daily`/`weekly`/`monthly`) |
-| `GET` | `/api/analytics/hotspots` | Geographic incident cluster coordinates |
-| `GET` | `/api/analytics/resource-forecast` | Projected resource demand vs. available |
-| `GET` | `/api/analytics/shelter-forecast` | Shelter occupancy forecast |
-| `GET` | `/api/analytics/response-time` | MTTR / MTTV by incident category |
+| `GET` | `/api/analytics/trends` | Incident counts by period |
+| `GET` | `/api/analytics/hotspots` | Geographic incident clusters |
+| `GET` | `/api/analytics/resource-forecast` | Demand vs. available |
+| `GET` | `/api/analytics/shelter-forecast` | Occupancy forecast |
+| `GET` | `/api/analytics/response-time` | MTTR / MTTV per category |
 | `GET` | `/api/analytics/risk-timeline` | Rolling risk score (3–30 days) |
-| `GET` | `/api/analytics/briefing` | AI-generated executive briefing |
-
-</details>
-
-<details>
-<summary><strong>Intelligence</strong></summary>
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/intelligence/weather` | Current weather at coordinates |
-| `GET` | `/api/intelligence/fire-hotspots` | Satellite fire detections near coordinates |
+| `GET` | `/api/analytics/briefing` | AI executive briefing |
 
 </details>
 
@@ -547,22 +499,22 @@ Interactive docs: `/docs` (Swagger UI) · `/redoc` (ReDoc)
 
 ```mermaid
 flowchart LR
-    A[Citizen Report\nfree text + location] --> B[Gemini classify_incident]
+    A[Citizen Report] --> B[Gemini classify_incident]
     B --> C{confidence > 0.85?}
     C -- Yes --> D[Auto-assign severity]
     C -- No --> E[Keep submitted severity]
     D & E --> F[Trust Engine]
-    F --> G[Heuristic score\ncompleteness · recency · location]
+    F --> G[Heuristic score]
     F --> H[Intelligence overlay\nweather · fire · corroboration]
     F --> I[Gemini semantic bonus]
-    G & H & I --> J[Trust Score 0–100\nconfidence_level]
+    G & H & I --> J[Trust Score 0–100]
     J --> K{critical + high confidence?}
     K -- Yes --> L[Auto-generate Alert]
     K -- No --> M[Pending review]
     L --> N[Multilingual translation\nEN · SW · FR · AR]
-    N --> O[WebSocket broadcast\nto all authority dashboards]
-    O --> P[Situation Report\nGemini SITREP]
-    P --> Q[Emergency Authorities\ntake action]
+    N --> O[WebSocket broadcast]
+    O --> P[SITREP generated]
+    P --> Q[Authorities act]
 ```
 
 ---
@@ -571,60 +523,40 @@ flowchart LR
 
 | Control | Implementation |
 |---|---|
-| Password hashing | bcrypt (cost factor 12) — `bcrypt.hashpw` / `bcrypt.checkpw` |
-| JWT (backend) | HS256 via `python-jose` — signed with `SECRET_KEY`, 7-day expiry |
-| JWT (frontend) | NextAuth cookie — signed with `NEXTAUTH_SECRET`, HttpOnly, SameSite=Lax |
-| CSRF | NextAuth built-in double-submit CSRF token on all mutation endpoints |
-| CORS | FastAPI — explicit origin allowlist + `allow_origin_regex` for Vercel preview URLs |
-| Rate limiting | slowapi — 5 req/min on register, 10 req/min on login |
-| Input validation | Pydantic v2 strict mode on all request schemas |
-| Environment secrets | No secrets committed to Git — all via Vercel / Render env dashboards |
-| Production guard | Backend exits at startup if `SECRET_KEY` is the dev default and `APP_ENV=production` |
+| Password hashing | bcrypt cost-12 |
+| JWT (backend) | HS256, python-jose, 7-day expiry |
+| JWT (frontend) | NextAuth HttpOnly cookie, SameSite=Lax |
+| CSRF | NextAuth double-submit token |
+| CORS | FastAPI explicit allowlist + Vercel preview regex |
+| Rate limiting | slowapi — 5 req/min register, 10 req/min login |
+| Input validation | Pydantic v2 strict mode |
+| Secrets | Never committed — Vercel / Render env dashboards only |
+| Production guard | Backend exits if `SECRET_KEY` is default and `APP_ENV=production` |
 
 ---
 
 ## Performance
 
-| Concern | Approach |
-|---|---|
-| API latency | FastAPI async I/O — all DB and HTTP calls are non-blocking |
-| AI latency | Gemini calls are parallel where possible; mock fallback adds zero latency |
-| Frontend | Next.js App Router with React Server Components; Vercel Edge CDN |
-| WebSocket scale | Redis Pub/Sub allows horizontal backend scaling across multiple instances |
-| Map rendering | Leaflet markers are lazy-clustered; tiles from CartoDB CDN |
-| Build size | `optimizePackageImports: ["lucide-react"]` keeps bundle lean |
-| Cold starts | Render free tier — first request may take ~30 s on cold boot |
-
----
-
-## Local with Docker
-
-```bash
-cd docker
-docker compose up --build
-```
-
-| Service | Port |
-|---|---|
-| PostgreSQL | 5432 |
-| FastAPI backend | 8000 |
-| Next.js frontend | 3000 |
+- **FastAPI** async I/O — all DB and HTTP calls are non-blocking
+- **Next.js** App Router with React Server Components; served from Vercel Edge CDN
+- **WebSocket** Redis Pub/Sub allows horizontal backend scaling
+- **Gemini** calls are parallel where possible; mock fallback adds zero latency
+- **Leaflet** markers lazy-clustered; tiles from CartoDB CDN
 
 ---
 
 ## Roadmap
 
-- [ ] **Mobile PWA** — offline-capable incident submission via service worker (sw.js already ships)
-- [ ] **Push notifications** — Web Push API for authority alerts
-- [ ] **Geofencing** — auto-notify citizens within an affected radius
-- [ ] **Multi-city** — configurable map center and jurisdiction boundaries per deployment
-- [ ] **Image evidence** — photo upload attached to incident reports with Gemini vision analysis
-- [ ] **PostgreSQL persistence** — production data survives Render restarts
-- [ ] **Role: Responder** — field responder role with assignment queue
-- [ ] **SLA tracking** — response time SLA enforcement with escalation rules
-- [ ] **OpenAI provider** — pluggable AI backend alongside Gemini
-- [ ] **Audit export** — PDF/CSV export of trust audit logs per incident
-- [ ] **Two-factor auth** — TOTP-based 2FA for authority accounts
+- [ ] Mobile PWA — offline incident submission (service worker already ships)
+- [ ] Web Push notifications for authority alerts
+- [ ] Geofencing — auto-notify citizens within affected radius
+- [ ] Multi-city — configurable map center per deployment
+- [ ] Image evidence — photo upload with Gemini vision analysis
+- [ ] PostgreSQL persistence — survive Render restarts without re-registration
+- [ ] Responder role — field responder assignment queue
+- [ ] SLA tracking — escalation rules on unverified critical incidents
+- [ ] Two-factor auth — TOTP for authority accounts
+- [ ] Audit log export — PDF/CSV per incident
 
 ---
 
@@ -634,9 +566,9 @@ docker compose up --build
 |---|---|---|
 | Admin | `admin@gmail.com` | `Admin@123` |
 
-Register any email at `/auth/register` to create a standard USER account.
+Register any email at `/auth/register` for a USER account.
 
-> **Note:** Render free-tier services restart after inactivity. The admin account is re-seeded automatically on every restart. Registered user accounts persist until the next restart unless a PostgreSQL `DATABASE_URL` is configured.
+> Admin is re-seeded on every Render restart. Registered users persist only until the next restart unless `DATABASE_URL` is set.
 
 ---
 
@@ -646,28 +578,25 @@ Register any email at `/auth/register` to create a standard USER account.
   <tr>
     <td align="center">
       <a href="https://github.com/fokrulanthro16-eng">
-        <img src="https://github.com/fokrulanthro16-eng.png" width="80px" alt="Fokrul"/><br/>
+        <img src="https://github.com/fokrulanthro16-eng.png" width="80" alt="Fokrul"/><br/>
         <sub><b>Fokrul</b></sub>
       </a><br/>
-      <sub>Creator & Maintainer</sub>
+      <sub>Creator &amp; Maintainer</sub>
     </td>
   </tr>
 </table>
 
-Contributions are welcome. Open an issue to discuss a feature, or submit a pull request against `main`.
+Contributions welcome. Open an issue or submit a pull request against `main`.
 
 ---
 
 ## License
 
-MIT © 2024 Fokrul. See [LICENSE](LICENSE) for details.
+MIT &copy; 2024 Fokrul. See [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
-
-Built for humanity. Powered by AI. Deployed for real emergencies.
-
-[sentinel-ai-six-omega.vercel.app](https://sentinel-ai-six-omega.vercel.app)
-
+Built for humanity. Powered by AI. Deployed for real emergencies.<br/>
+<a href="https://sentinel-ai-six-omega.vercel.app">sentinel-ai-six-omega.vercel.app</a>
 </div>
