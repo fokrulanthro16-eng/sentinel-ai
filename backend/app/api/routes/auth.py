@@ -26,6 +26,22 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 _users: dict[str, dict] = {}
 
 
+def _seed_defaults() -> None:
+    """Ensure a default admin exists so the app is usable on first boot."""
+    admin_email = "admin@gmail.com"
+    if admin_email not in _users:
+        _users[admin_email] = {
+            "id": "default-admin-001",
+            "name": "Admin User",
+            "email": admin_email,
+            "password": hash_password("Admin@123"),
+            "role": "ADMIN",
+        }
+
+
+_seed_defaults()
+
+
 # ── Pydantic schemas ──────────────────────────────────────────────────────────
 
 class RegisterRequest(BaseModel):
