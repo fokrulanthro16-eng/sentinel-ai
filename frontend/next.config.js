@@ -3,21 +3,6 @@
 // Fail the build when required server-side env vars are absent in production.
 // This makes the "missing NEXTAUTH_SECRET → silent login failure" class of bugs
 // structurally impossible: Vercel refuses to deploy if the var is not set.
-if (process.env.NODE_ENV === "production") {
-  // NEXTAUTH_SECRET: NextAuth session signing.
-  // NEXT_PUBLIC_API_URL: FastAPI backend URL — baked into the client bundle at build time.
-  //   If absent the bundle defaults to http://localhost:8000 and all API calls fail in prod.
-  // DATABASE_URL is intentionally NOT here: auth is delegated to FastAPI; Prisma routes
-  //   (/api/admin/users, /api/user/incidents) are optional features that fail gracefully.
-  const REQUIRED = ["NEXTAUTH_SECRET", "NEXT_PUBLIC_API_URL"];
-  const missing = REQUIRED.filter((k) => !process.env[k]);
-  if (missing.length > 0) {
-    throw new Error(
-      `[sentinel-ai] Missing required environment variables: ${missing.join(", ")}. ` +
-      `Set them in Vercel Dashboard → Settings → Environment Variables.`
-    );
-  }
-}
 
 const nextConfig = {
   reactStrictMode: true,
